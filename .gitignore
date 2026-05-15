@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.env
+.venv
+venv/
+*.db
+*.sqlite
+private_key.json
+.DS_Store
+.idea/
+.vscode/
