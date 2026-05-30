@@ -13,6 +13,48 @@ app = FastAPI(lifespan=lifespan)
 
 
 # endpointy crud
+# Dodałem te dwie funkcję aby mock działał w tym czasi, w przyszłości 
+# najprawdopodobniej do usunięcia
+
+import re
+import base64
+
+def he_sum(salaries: list[bytes]) -> bytes:
+    suma = 0
+    for s in salaries:
+        try:
+            s_str = s.decode('utf-8', errors='ignore')
+            # Если данные в БД лежат в Base64, расшифровываем их
+            if not s_str.startswith("HE_CIPHERTEXT"):
+                try:
+                    s_str = base64.b64decode(s_str).decode('utf-8')
+                except Exception:
+                    pass
+            
+            match = re.search(r'\[(\d+)\]', s_str)
+            if match:
+                suma += int(match.group(1))
+        except Exception:
+            continue
+    return f"HE_CIPHERTEXT_MOCK_[{suma}]".encode('utf-8')
+
+def he_mul_plain(salary_enc: bytes, factor: int) -> bytes:
+    try:
+        s_str = salary_enc.decode('utf-8', errors='ignore')
+        # Снова проверка на Base64 для операций умножения
+        if not s_str.startswith("HE_CIPHERTEXT"):
+            try:
+                s_str = base64.b64decode(s_str).decode('utf-8')
+            except Exception:
+                pass
+            
+        match = re.search(r'\[(\d+)\]', s_str)
+        if match:
+            nowa_wartosc = int((int(match.group(1)) * factor) / 100)
+            return f"HE_CIPHERTEXT_MOCK_[{nowa_wartosc}]".encode('utf-8')
+    except Exception:
+        pass
+    return salary_enc
 
 @app.post("/records", response_model=RecordOut)
 def add_record(data: RecordIn):
