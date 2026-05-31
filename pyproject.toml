@@ -1,16 +1,22 @@
 [project]
 name = "paillier-db"
 version = "0.1.0"
-description = "Add your description here"
+description = "Silnik bazodanowy z szyfrowaniem homomorficznym (schemat BFV, biblioteka Pyfhel/SEAL)"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi>=0.136.1",
-    "httpx>=0.28.1",
-    "matplotlib>=3.10.9",
-    "phe>=1.5.0",
-    "pydantic>=2.13.4",
-    "pytest>=9.0.3",
-    "streamlit>=1.57.0",
-    "uvicorn>=0.47.0",
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
+    "httpx>=0.27.0",
+    "pydantic>=2.7.0",
+    "streamlit>=1.35.0",
+    "matplotlib>=3.9.0",
+    "pytest>=8.0.0",
+    "cryptography>=42.0.0",
+    "Pyfhel>=3.4.2",
+    "numpy>=1.26.0",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["crypto", "server/tests"]

@@ -1,31 +1,32 @@
 from pydantic import BaseModel
 
-# request models (to co idzie na serwer)
 
 class RecordIn(BaseModel):
-    """Dane przy dodawaniu pracownika (POST /records)"""
+    """Dane przy dodawaniu pracownika (POST /records).
+    pensja_enc to szyfrogram zakodowany w base64."""
     imie: str
     dzial: str
-    pensja_enc: bytes
+    pensja_enc: str   # base64-encoded ciphertext
 
 
 class RecordOut(BaseModel):
-    """Dane zwracane klientowi"""
+    """Dane zwracane klientowi."""
     id: int
     imie: str
     dzial: str
-    pensja_enc: bytes
+    pensja_enc: str   # base64-encoded ciphertext
+
 
 class AggregateResult(BaseModel):
-    """Wynik agregacji - suma jako bajty"""
-    wynik_enc: bytes
+    """Wynik agregacji – zaszyfrowana suma jako base64."""
+    wynik_enc: str
+
 
 class CountResult(BaseModel):
-    """Liczba pracownikow"""
+    """Liczba pracowników (plaintext – nie zawiera wartości pensji)."""
     count: int
 
-class RaiseResult(BaseModel):
-    """Potwierdzenie po podwyżce"""
-    zaktualizowano:int
 
-    
+class RaiseResult(BaseModel):
+    """Potwierdzenie po podwyżce."""
+    zaktualizowano: int

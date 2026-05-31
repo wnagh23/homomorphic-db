@@ -1,54 +1,67 @@
 import httpx
-import base64
-import mock_crypto as crypto
+import sys
+import os
 
-def safe_decode(s: str) -> bytes:
-    # Умный fallback: если сервер отдал чистый мок-текст, не трогаем Base64
-    if s.startswith("HE_CIPHERTEXT"):
-        return s.encode('utf-8')
-    try:
-        # Иначе применяем Base64 с автоматическим выравниванием (padding)
-        return base64.b64decode(s + '=' * (-len(s) % 4))
-    except Exception:
-        return s.encode('utf-8')
+# Upewniamy się, że moduł crypto jest dostępny z poziomu client/
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+from crypto.encrypt import encrypt, decrypt
+from crypto.transport import bytes_to_b64, b64_to_bytes
+
 
 class HEClient:
-    def __init__(self, base_url="http://localhost:8000"):
+    """Klient bazy danych z szyfrowaniem homomorficznym.
+
+    Klient posiada klucz prywatny i jest jedynym miejscem gdzie dane
+    są szyfrowane i odszyfrowywane. Serwer operuje wyłącznie na szyfrogramach.
+    """
+
+    def __init__(self, base_url: str = "http://localhost:8000"):
         self.base_url = base_url
 
-    def add_employee(self, name: str, dept: str, salary: int):
-        enc_salary = crypto.encrypt(salary)
+    def add_employee(self, name: str, dept: str, salary: int) -> dict:
+        """Szyfruje pensję lokalnie i wysyła szyfrogram na serwer."""
+        enc_bytes = encrypt(salary)
         payload = {
             "imie": name,
             "dzial": dept,
-            "pensja_enc": base64.b64encode(enc_salary).decode('utf-8')
+            "pensja_enc": bytes_to_b64(enc_bytes),
         }
         response = httpx.post(f"{self.base_url}/records", json=payload)
         response.raise_for_status()
         return response.json()
 
-    def get_employees(self):
+    def get_employees(self) -> list[dict]:
+        """Pobiera pracowników i odszyfrowuje pensje lokalnie."""
         response = httpx.get(f"{self.base_url}/records")
         response.raise_for_status()
         records = response.json()
-        
         for r in records:
-            # Используем новую безопасную функцию
-            enc_bytes = safe_decode(r['pensja_enc'])
-            r['pensja_jawna'] = crypto.decrypt(enc_bytes)
+            enc_bytes = b64_to_bytes(r["pensja_enc"])
+            r["pensja_jawna"] = decrypt(enc_bytes)
         return records
 
-    def get_total_salary(self):
+    def get_total_salary(self) -> int:
+        """Pobiera zaszyfrowaną sumę z serwera i odszyfrowuje ją lokalnie."""
         response = httpx.get(f"{self.base_url}/aggregate/sum")
         response.raise_for_status()
         data = response.json()
-        
-        # Используем новую безопасную функцию
-        enc_bytes = safe_decode(data['wynik_enc'])
-        return crypto.decrypt(enc_bytes)
+        enc_bytes = b64_to_bytes(data["wynik_enc"])
+        return decrypt(enc_bytes)
 
-    def raise_salaries(self, percent: int):
+    def get_count(self) -> int:
+        """Pobiera liczbę pracowników."""
+        response = httpx.get(f"{self.base_url}/aggregate/count")
+        response.raise_for_status()
+        return response.json()["count"]
+
+    def raise_salaries(self, percent: int) -> dict:
+        """Wysyła podwyżkę jako jawny współczynnik (np. 10% → factor=110).
+        Serwer mnoży każdy szyfrogram przez 110 bez wiedzy o wartości pensji.
+        Po odczytaniu klient dzieli wynik przez 100."""
         factor = 100 + percent
-        response = httpx.post(f"{self.base_url}/transform/raise?factor={factor}")
+        response = httpx.post(
+            f"{self.base_url}/transform/raise", params={"factor": factor}
+        )
         response.raise_for_status()
         return response.json()
