@@ -11,6 +11,7 @@ from crypto.encrypt import encrypt, decrypt
 from crypto.transport import bytes_to_b64, b64_to_bytes
 from crypto.bfv_context import generate_and_save_keys
 from crypto.text_index import text_token
+from crypto.text_encrypt import encrypt_text, decrypt_text
 
 client = TestClient(app)
 
@@ -26,8 +27,8 @@ def setup_module():
 
 def _payload(name, dept, salary):
     return {
-        "imie": name,
-        "dzial": dept,
+        "imie": bytes_to_b64(encrypt_text(name)),
+        "dzial": bytes_to_b64(encrypt_text(dept)),
         "dzial_token": text_token("dzial", dept),
         "pensja_enc": bytes_to_b64(encrypt(salary)),
     }
@@ -36,7 +37,7 @@ def _payload(name, dept, salary):
 def test_add_employee():
     r = client.post("/records", json=_payload("Anna Nowak", "IT", 6000))
     assert r.status_code == 200
-    assert r.json()["imie"] == "Anna Nowak"
+    assert decrypt_text(b64_to_bytes(r.json()["imie"])) == "Anna Nowak"
 
 
 def test_get_records():
@@ -51,7 +52,7 @@ def test_filter_by_dept():
     r = client.get("/records", params={"dzial_token": token})
     assert r.status_code == 200
     for emp in r.json():
-        assert emp["dzial"] == "HR"
+        assert decrypt_text(b64_to_bytes(emp["dzial"])) == "HR"
 
 
 def test_get_single():

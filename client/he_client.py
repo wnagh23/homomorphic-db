@@ -7,6 +7,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from crypto.encrypt import encrypt, decrypt
 from crypto.transport import bytes_to_b64, b64_to_bytes
 from crypto.text_index import text_token
+from crypto.text_encrypt import encrypt_text, decrypt_text
 
 DEPTS = ["IT", "HR", "Sprzedaż", "Zarząd"]
 
@@ -17,8 +18,8 @@ class HEClient:
 
     def add_employee(self, name: str, dept: str, salary: int) -> dict:
         payload = {
-            "imie": name,
-            "dzial": dept,
+            "imie": bytes_to_b64(encrypt_text(name)),
+            "dzial": bytes_to_b64(encrypt_text(dept)),
             "dzial_token": text_token("dzial", dept),
             "pensja_enc": bytes_to_b64(encrypt(salary)),
         }
@@ -34,6 +35,8 @@ class HEClient:
         r.raise_for_status()
         records = r.json()
         for rec in records:
+            rec["imie"] = decrypt_text(b64_to_bytes(rec["imie"]))
+            rec["dzial"] = decrypt_text(b64_to_bytes(rec["dzial"]))
             rec["pensja_jawna"] = decrypt(b64_to_bytes(rec["pensja_enc"]))
         return records
 

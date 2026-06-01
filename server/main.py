@@ -28,8 +28,10 @@ app = FastAPI(lifespan=lifespan)
 
 @app.post("/records", response_model=RecordOut)
 def add_record(data: RecordIn):
+    imie_bytes = b64_to_bytes(data.imie)
+    dzial_bytes = b64_to_bytes(data.dzial)
     pensja_bytes = b64_to_bytes(data.pensja_enc)
-    new_id = add_employee(data.imie, data.dzial, data.dzial_token, pensja_bytes)
+    new_id = add_employee(imie_bytes, dzial_bytes, data.dzial_token, pensja_bytes)
     return RecordOut(id=new_id, imie=data.imie, dzial=data.dzial, pensja_enc=data.pensja_enc)
 
 
@@ -42,8 +44,8 @@ def get_records(dzial_token: str | None = None):
     return [
         RecordOut(
             id=emp["id"],
-            imie=emp["imie"],
-            dzial=emp["dzial"],
+            imie=bytes_to_b64(emp["imie"]),
+            dzial=bytes_to_b64(emp["dzial"]),
             pensja_enc=bytes_to_b64(emp["pensja_enc"]),
         )
         for emp in employees
@@ -56,7 +58,7 @@ def get_record(employee_id: int):
     if emp is None:
         raise HTTPException(status_code=404, detail="Pracownik nie istnieje")
     return RecordOut(
-        id=emp["id"], imie=emp["imie"], dzial=emp["dzial"],
+        id=emp["id"], imie=bytes_to_b64(emp["imie"]), dzial=bytes_to_b64(emp["dzial"]),
         pensja_enc=bytes_to_b64(emp["pensja_enc"]),
     )
 

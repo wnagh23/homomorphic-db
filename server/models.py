@@ -2,17 +2,17 @@ from pydantic import BaseModel
 
 
 class RecordIn(BaseModel):
-    imie: str
-    dzial: str
+    imie: str        # zaszyfrowane Fernetem, base64
+    dzial: str       # zaszyfrowane Fernetem, base64
     dzial_token: str
-    pensja_enc: str
+    pensja_enc: str  # zaszyfrowane BFV, base64
 
 
 class RecordOut(BaseModel):
     id: int
-    imie: str
-    dzial: str
-    pensja_enc: str
+    imie: str        # zaszyfrowane Fernetem, base64
+    dzial: str       # zaszyfrowane Fernetem, base64
+    pensja_enc: str  # zaszyfrowane BFV, base64
 
 
 class AggregateResult(BaseModel):

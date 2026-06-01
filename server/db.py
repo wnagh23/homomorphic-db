@@ -15,8 +15,8 @@ def init_db():
     conn.execute("""
         CREATE TABLE IF NOT EXISTS pracownicy (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            imie        TEXT    NOT NULL,
-            dzial       TEXT    NOT NULL,
+            imie        BLOB    NOT NULL,
+            dzial       BLOB    NOT NULL,
             dzial_token TEXT    NOT NULL,
             pensja_enc  BLOB    NOT NULL
         )
@@ -25,7 +25,7 @@ def init_db():
     conn.close()
 
 
-def add_employee(imie: str, dzial: str, dzial_token: str, pensja_enc: bytes) -> int:
+def add_employee(imie: bytes, dzial: bytes, dzial_token: str, pensja_enc: bytes) -> int:
     conn = get_connection()
     cursor = conn.execute(
         "INSERT INTO pracownicy (imie, dzial, dzial_token, pensja_enc) VALUES (?, ?, ?, ?)",
